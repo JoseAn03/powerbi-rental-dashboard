@@ -1,0 +1,7 @@
+category_id,category_name,daily_rate,multiplier
+1,Economy,25,1.0
+2,Compact,35,1.2
+3,Midsize,45,1.4
+4,Full Size,55,1.6
+5,SUV,70,2.0
+6,Luxury,120,3.0
