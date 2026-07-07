@@ -1,0 +1,6 @@
+brand_id,brand_name,group,priority
+1,Alamo,Enterprise Holdings,Premium
+2,Enterprise,Enterprise Holdings,Standard
+3,National,Enterprise Holdings,Standard
+4,Grupo ANC,Grupo ANC,Premium
+5,Budget,Grupo ANC,Economy
