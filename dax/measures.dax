@@ -1,0 +1,224 @@
+// ============================================
+// DAX Measures - Rental Operations Dashboard
+// Power BI Desktop
+// ============================================
+
+// ─── Tabla de medidas ───
+// Crea una tabla separada llamada "Measures" para organizar
+
+// ═══════════════════════════════════════════════
+// MEDIDAS BÁSICAS
+// ═══════════════════════════════════════════════
+
+Total Reservas = COUNTROWS(fact_reservations)
+
+Reservas Activas = 
+CALCULATE(
+    COUNTROWS(fact_reservations),
+    fact_reservations[status] = "activa"
+)
+
+Reservas Completadas = 
+CALCULATE(
+    COUNTROWS(fact_reservations),
+    fact_reservations[status] = "completada"
+)
+
+Reservas Canceladas = 
+CALCULATE(
+    COUNTROWS(fact_reservations),
+    fact_reservations[status] = "cancelada"
+)
+
+// ═══════════════════════════════════════════════
+// NO-SHOW ANALYSIS
+// ═══════════════════════════════════════════════
+
+No Shows = 
+CALCULATE(
+    COUNTROWS(fact_reservations),
+    fact_reservations[status] = "no_show"
+)
+
+No Show % = 
+DIVIDE(
+    [No Shows],
+    [Total Reservas],
+    0
+) * 100
+
+No Show Target = 10  // Target: <10%
+
+No Show vs Target = 
+VAR CurrentNS = [No Show %]
+VAR Target = [No Show Target]
+RETURN
+IF(
+    CurrentNS <= Target,
+    "✅ " & FORMAT(CurrentNS, "0.0") & "%",
+    "⚠️ " & FORMAT(CurrentNS, "0.0") & "%"
+)
+
+Pérdida Estimada No Show = 
+CALCULATE(
+    SUM(fact_reservations[total_amount]),
+    fact_reservations[status] = "no_show"
+)
+
+// ═══════════════════════════════════════════════
+// MÉTRICAS FINANCIERAS
+// ═══════════════════════════════════════════════
+
+Revenue Total = SUM(fact_reservations[total_amount])
+
+Revenue Promedio Diario = 
+DIVIDE(
+    [Revenue Total],
+    DISTINCTCOUNT(fact_reservations[pickup_datetime]),
+    0
+)
+
+Ticket Promedio = AVERAGE(fact_reservations[total_amount])
+
+Duración Promedio (días) = AVERAGE(fact_reservations[rental_days])
+
+// ═══════════════════════════════════════════════
+// MÉTRICAS DE CLIENTES
+// ═══════════════════════════════════════════════
+
+Clientes VIP = 
+CALCULATE(
+    COUNTROWS(fact_reservations),
+    fact_reservations[is_vip] = TRUE
+)
+
+Clientes Corporativos = 
+CALCULATE(
+    COUNTROWS(fact_reservations),
+    fact_reservations[is_corporate] = TRUE
+)
+
+Clientes Únicos = DISTINCTCOUNT(fact_reservations[customer_id])
+
+// ═══════════════════════════════════════════════
+// MÉTRICAS TEMPORALES
+// ═══════════════════════════════════════════════
+
+Reservas MTD = 
+TOTALMTD(
+    [Total Reservas],
+    dim_calendar[date]
+)
+
+Revenue MTD = 
+TOTALMTD(
+    [Revenue Total],
+    dim_calendar[date]
+)
+
+Reservas vs Mes Anterior = 
+VAR CurrentMonth = [Total Reservas]
+VAR PrevMonth = 
+    CALCULATE(
+        [Total Reservas],
+        PREVIOUSMONTH(dim_calendar[date])
+    )
+RETURN
+    DIVIDE(CurrentMonth - PrevMonth, PrevMonth, 0)
+
+// ═══════════════════════════════════════════════
+// KPIs DE VUELOS
+// ═══════════════════════════════════════════════
+
+Total Vuelos = COUNTROWS(fact_flights)
+
+Vuelos Retrasados = 
+CALCULATE(
+    COUNTROWS(fact_flights),
+    fact_flights[status] = "delayed"
+)
+
+% Retrasos = 
+DIVIDE(
+    [Vuelos Retrasados],
+    [Total Vuelos],
+    0
+) * 100
+
+Pasajeros Totales = SUM(fact_flights[passengers_actual])
+
+// ═══════════════════════════════════════════════
+// COMPARATIVA POR GRUPO EMPRESARIAL
+// ═══════════════════════════════════════════════
+
+Revenue Enterprise = 
+CALCULATE(
+    [Revenue Total],
+    dim_brands[group] = "Enterprise Holdings"
+)
+
+Revenue Grupo ANC = 
+CALCULATE(
+    [Revenue Total],
+    dim_brands[group] = "Grupo ANC"
+)
+
+No Show % Enterprise = 
+CALCULATE(
+    [No Show %],
+    dim_brands[group] = "Enterprise Holdings"
+)
+
+No Show % Grupo ANC = 
+CALCULATE(
+    [No Show %],
+    dim_brands[group] = "Grupo ANC"
+)
+
+// ═══════════════════════════════════════════════
+// KPI CARDS (formateados para visual)
+// ═══════════════════════════════════════════════
+
+KPI Revenue = 
+VAR Rev = [Revenue Total]
+RETURN
+    IF(
+        Rev >= 1000000,
+        "$" & FORMAT(Rev / 1000000, "0.00") & "M",
+        "$" & FORMAT(Rev / 1000, "0.0") & "K"
+    )
+
+KPI No Show Rate = 
+FORMAT([No Show %], "0.0") & "%"
+
+KPI Avg Ticket = 
+"$" & FORMAT([Ticket Promedio], "#,##0.00")
+
+KPI Ocupación Diaria = 
+DIVIDE(
+    [Total Reservas],
+    DISTINCTCOUNT(dim_calendar[date]),
+    0
+)
+
+// ═══════════════════════════════════════════════
+// RANKINGS
+// ═══════════════════════════════════════════════
+
+Rank Marcas por Revenue = 
+RANKX(
+    ALL(dim_brands[brand_name]),
+    [Revenue Total],
+    ,
+    DESC,
+    Skip
+)
+
+Rank Agencias por No Show = 
+RANKX(
+    ALL(dim_agencies[agency_name]),
+    [No Show %],
+    ,
+    DESC,
+    Skip
+)
