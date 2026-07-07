@@ -1,0 +1,9 @@
+agency_id,agency_name,is_online,commission_pct
+1,Direct,False,0
+2,Expedia,True,15
+3,Booking.com,True,12
+4,Kayak,True,10
+5,Priceline,True,14
+6,Travelocity,True,11
+7,Orbitz,True,13
+8,Corporate,False,5
