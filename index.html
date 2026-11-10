@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rental Operations Dashboard — Datos sintéticos 2025</title>
+<meta name="description" content="Dashboard interactivo de operación de alquiler de autos construido con datos 100% sintéticos (2025). Caso de portafolio de análisis de datos.">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0B1220; --card:#131E33; --border:rgba(148,163,184,.14);
+    --text:#E2E8F0; --muted:#94A3B8; --cyan:#38BDF8; --teal:#2DD4BF;
+    --amber:#FBBF24; --rose:#FB7185; --green:#34D399; --violet:#A78BFA;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:"Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif; padding:24px 16px 12px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  header{border-left:4px solid var(--cyan); padding:4px 0 4px 16px; margin-bottom:6px;}
+  h1{font-size:clamp(26px,4vw,38px); font-weight:700; letter-spacing:.2px;}
+  .subtitle{color:var(--muted); font-size:clamp(13px,2vw,16px); margin-top:6px; max-width:820px; line-height:1.45;}
+  .meta{color:var(--muted); font-size:12.5px; margin-top:8px; text-transform:uppercase; letter-spacing:.12em;}
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:22px 0 6px;}
+  .kpi{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px;}
+  .kpi .label{color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.1em;}
+  .kpi .value{font-size:clamp(24px,3.4vw,34px); font-weight:700; margin:8px 0 4px;}
+  .kpi .note{color:var(--muted); font-size:12.5px; line-height:1.4;}
+  .kpi.c1 .value{color:var(--cyan);} .kpi.c2 .value{color:var(--teal);}
+  .kpi.c3 .value{color:var(--rose);} .kpi.c4 .value{color:var(--amber);}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px;}
+  .card.wide{grid-column:1 / -1;}
+  .card h2{font-size:16.5px; font-weight:600; line-height:1.4; margin-bottom:4px;}
+  .card p.sub{color:var(--muted); font-size:12.5px; margin-bottom:12px;}
+  .chart-box{position:relative; height:280px;}
+  .chart-box.tall{height:300px;}
+  .findings{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; margin-top:14px;}
+  .findings h2{font-size:16.5px; margin-bottom:10px;}
+  .findings ul{list-style:none;}
+  .findings li{padding:7px 0 7px 20px; position:relative; color:#CBD5E1; font-size:14.5px; line-height:1.5;}
+  .findings li::before{content:"▸"; position:absolute; left:0; color:var(--cyan);}
+  .findings li strong{color:var(--text);}
+  footer{margin:22px 0 10px; padding:14px 16px; border:1px dashed rgba(251,191,36,.45); border-radius:10px; color:#FDE68A; font-size:13.5px; text-align:center; line-height:1.5;}
+  footer .small{display:block; color:var(--muted); font-size:12px; margin-top:5px;}
+  @media (max-width:860px){ .kpis{grid-template-columns:1fr 1fr;} .grid{grid-template-columns:1fr;} }
+  @media (max-width:480px){ .kpis{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Rental Operations Dashboard</h1>
+    <p class="subtitle">Dashboard interactivo construido con datos 100% sintéticos (2025) — versión web del caso de Power BI en construcción.</p>
+    <p class="meta">Caso de portafolio · Analista de Datos · Costa Rica</p>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi c1"><div class="label">Reservas totales</div><div class="value" id="k-reservas">—</div><div class="note" id="k-reservas-note"></div></div>
+    <div class="kpi c2"><div class="label">Ingreso total</div><div class="value" id="k-ingreso">—</div><div class="note" id="k-ingreso-note"></div></div>
+    <div class="kpi c3"><div class="label">Tasa de no-show</div><div class="value" id="k-noshow">—</div><div class="note">Sobre reservas no canceladas. La meta operativa de referencia es bajar del 10%.</div></div>
+    <div class="kpi c4"><div class="label">Tarifa diaria promedio</div><div class="value" id="k-adr">—</div><div class="note" id="k-adr-note"></div></div>
+  </section>
+
+  <section class="grid">
+    <div class="card wide">
+      <h2>La temporada alta manda: diciembre lidera el ingreso y dic–abr concentra el 65% del año</h2>
+      <p class="sub">Ingreso mensual (barras, US$) y volumen de reservas (línea), por fecha de retiro.</p>
+      <div class="chart-box tall"><canvas id="ch-mensual"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>El canal Web concentra el mayor no-show (13,7%)</h2>
+      <p class="sub">Tasa de no-show por canal de reserva (% sobre reservas no canceladas).</p>
+      <div class="chart-box"><canvas id="ch-canal"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>El pago anticipado corta el no-show casi a la mitad (7,1% vs 13,4%)</h2>
+      <p class="sub">Tasa de no-show según la reserva se pagó o no por adelantado.</p>
+      <div class="chart-box"><canvas id="ch-prepago"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>La demanda se concentra en la mañana: el pico es a las 11:00 y el 54% llega entre 9:00 y 13:00</h2>
+      <p class="sub">Reservas no canceladas por hora de retiro programada.</p>
+      <div class="chart-box"><canvas id="ch-hora"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Las SUV generan la mayor parte del ingreso: 40% de cada dólar entra por una SUV</h2>
+      <p class="sub">Ingreso total por clase de vehículo (reservas completadas).</p>
+      <div class="chart-box"><canvas id="ch-clase"></canvas></div>
+    </div>
+    <div class="card wide">
+      <h2>Alamo lidera la demanda (37,9% de las reservas), sin que ninguna marca domine</h2>
+      <p class="sub">Participación de cada marca en reservas e ingreso total.</p>
+      <div class="chart-box"><canvas id="ch-marca"></canvas></div>
+    </div>
+  </section>
+
+  <section class="findings">
+    <h2>Hallazgos clave</h2>
+    <ul>
+      <li><strong>El no-show es un problema digital:</strong> Web (13,7%) más que duplica al Mostrador (6,1%).</li>
+      <li><strong>El pago anticipado es la palanca más clara:</strong> baja el no-show de 13,4% a 7,1% (−47%).</li>
+      <li><strong>La operación es estacional y matutina:</strong> dic–abr aporta el 65% del ingreso y el grueso de retiros ocurre entre 9:00 y 13:00.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Datos 100% sintéticos con fines de demostración. Ningún dato real de clientes ni de empresa.
+    <span class="small">Versión web (HTML + Chart.js) del caso de Power BI en construcción · Datos generados con Python a partir de un modelo de simulación con semilla fija.</span>
+  </footer>
+</div>
+
+<script type="application/json" id="dashboard-data">
+{
+ "kpis": {
+  "reservas": 49892,
+  "completadas": 40622,
+  "canceladas": 4332,
+  "ingreso": 14902516.88,
+  "noshow_pct": 10.84,
+  "tasa_cancelacion": 8.68,
+  "adr": 79.67,
+  "ticket": 366.86
+ },
+ "mensual": {
+  "labels": [
+   "Ene",
+   "Feb",
+   "Mar",
+   "Abr",
+   "May",
+   "Jun",
+   "Jul",
+   "Ago",
+   "Sep",
+   "Oct",
+   "Nov",
+   "Dic"
+  ],
+  "ingreso": [
+   2037493.03,
+   1793818.26,
+   2021377.13,
+   1746311.56,
+   899005.95,
+   803404.6,
+   876454.67,
+   858501.35,
+   461151.41,
+   533855.44,
+   770182.23,
+   2100961.25
+  ],
+  "reservas": [
+   5338,
+   4676,
+   5166,
+   4439,
+   4050,
+   3642,
+   4028,
+   3918,
+   2764,
+   3109,
+   3580,
+   5182
+  ]
+ },
+ "noshow_canal": {
+  "labels": [
+   "Web",
+   "Telefónico",
+   "Agencia/OTA",
+   "Mostrador"
+  ],
+  "valores": [
+   13.66,
+   12.38,
+   8.91,
+   6.12
+  ]
+ },
+ "noshow_prepago": {
+  "labels": [
+   "Sin pago anticipado",
+   "Con pago anticipado"
+  ],
+  "valores": [
+   13.37,
+   7.1
+  ]
+ },
+ "hora": {
+  "labels": [
+   "5:00",
+   "6:00",
+   "7:00",
+   "8:00",
+   "9:00",
+   "10:00",
+   "11:00",
+   "12:00",
+   "13:00",
+   "14:00",
+   "15:00",
+   "16:00",
+   "17:00",
+   "18:00",
+   "19:00",
+   "20:00",
+   "21:00",
+   "22:00",
+   "23:00"
+  ],
+  "valores": [
+   316,
+   671,
+   1574,
+   3098,
+   4670,
+   5940,
+   6004,
+   4836,
+   3112,
+   1763,
+   1256,
+   1468,
+   1987,
+   2436,
+   2465,
+   1888,
+   1182,
+   581,
+   313
+  ]
+ },
+ "ingreso_clase": {
+  "labels": [
+   "SUV Estándar",
+   "SUV Full Size",
+   "Intermedio",
+   "Premium",
+   "Compacto",
+   "Económico",
+   "Pickup"
+  ],
+  "valores": [
+   3625838.55,
+   2305921.14,
+   2219855.12,
+   2104583.25,
+   1838856.46,
+   1612883.15,
+   1194579.21
+  ]
+ },
+ "marca": {
+  "labels": [
+   "Alamo",
+   "Enterprise",
+   "National"
+  ],
+  "reservas": [
+   18932,
+   17116,
+   13844
+  ],
+  "reservas_pct": [
+   37.9,
+   34.3,
+   27.7
+  ],
+  "ingreso_pct": [
+   36.3,
+   33.2,
+   30.5
+  ]
+ }
+}
+</script>
+<script>
+const D = JSON.parse(document.getElementById('dashboard-data').textContent);
+const nf = new Intl.NumberFormat('es-ES');
+const nf1 = new Intl.NumberFormat('es-ES', {minimumFractionDigits: 1, maximumFractionDigits: 1});
+const money = v => 'US$ ' + nf.format(Math.round(v));
+const moneyM = v => 'US$ ' + nf1.format(v / 1e6) + ' M';
+const pct = v => nf1.format(v) + '%';
+
+document.getElementById('k-reservas').textContent = nf.format(D.kpis.reservas);
+document.getElementById('k-reservas-note').textContent =
+  nf.format(D.kpis.completadas) + ' completadas · ' + nf.format(D.kpis.canceladas) + ' canceladas (' + pct(D.kpis.tasa_cancelacion) + ')';
+document.getElementById('k-ingreso').textContent = money(D.kpis.ingreso);
+document.getElementById('k-ingreso-note').textContent = 'Ticket promedio por renta completada: ' + money(D.kpis.ticket);
+document.getElementById('k-noshow').textContent = pct(D.kpis.noshow_pct);
+document.getElementById('k-adr').textContent = 'US$ ' + nf1.format(D.kpis.adr);
+document.getElementById('k-adr-note').textContent = 'Promedio sobre rentas completadas, todas las clases y marcas.';
+
+Chart.defaults.color = '#94A3B8';
+Chart.defaults.borderColor = 'rgba(148,163,184,0.12)';
+Chart.defaults.font.family = '"Segoe UI", system-ui, sans-serif';
+
+new Chart(document.getElementById('ch-mensual'), {
+  data: { labels: D.mensual.labels, datasets: [
+    { type: 'bar', label: 'Ingreso (US$)', data: D.mensual.ingreso, backgroundColor: 'rgba(56,189,248,0.75)', borderRadius: 4, yAxisID: 'y' },
+    { type: 'line', label: 'Reservas', data: D.mensual.reservas, borderColor: '#FBBF24', backgroundColor: '#FBBF24', tension: 0.3, pointRadius: 3, yAxisID: 'y1' }
+  ]},
+  options: { responsive: true, maintainAspectRatio: false,
+    scales: {
+      y: { ticks: { callback: v => moneyM(v) }, grid: { color: 'rgba(148,163,184,0.08)' } },
+      y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => nf.format(v) } }
+    },
+    plugins: { tooltip: { callbacks: { label: c => c.dataset.yAxisID === 'y' ? ' Ingreso: ' + money(c.parsed.y) : ' Reservas: ' + nf.format(c.parsed.y) } } } }
+});
+
+new Chart(document.getElementById('ch-canal'), {
+  type: 'bar',
+  data: { labels: D.noshow_canal.labels, datasets: [{ data: D.noshow_canal.valores,
+    backgroundColor: D.noshow_canal.valores.map((v, i) => i === 0 ? '#FB7185' : 'rgba(56,189,248,0.75)'), borderRadius: 4 }]},
+  options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    scales: { x: { ticks: { callback: v => pct(v) }, grid: { color: 'rgba(148,163,184,0.08)' } } },
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' No-show: ' + pct(c.parsed.x) } } } }
+});
+
+new Chart(document.getElementById('ch-prepago'), {
+  type: 'bar',
+  data: { labels: D.noshow_prepago.labels, datasets: [{ data: D.noshow_prepago.valores,
+    backgroundColor: ['#FB7185', '#34D399'], borderRadius: 4, maxBarThickness: 90 }]},
+  options: { responsive: true, maintainAspectRatio: false,
+    scales: { y: { ticks: { callback: v => pct(v) }, grid: { color: 'rgba(148,163,184,0.08)' } } },
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' No-show: ' + pct(c.parsed.y) } } } }
+});
+
+new Chart(document.getElementById('ch-hora'), {
+  type: 'bar',
+  data: { labels: D.hora.labels, datasets: [{ data: D.hora.valores,
+    backgroundColor: D.hora.valores.map(v => v === Math.max(...D.hora.valores) ? '#FBBF24' : 'rgba(56,189,248,0.75)'), borderRadius: 3 }]},
+  options: { responsive: true, maintainAspectRatio: false,
+    scales: { y: { ticks: { callback: v => nf.format(v) }, grid: { color: 'rgba(148,163,184,0.08)' } } },
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' Reservas: ' + nf.format(c.parsed.y) } } } }
+});
+
+new Chart(document.getElementById('ch-clase'), {
+  type: 'bar',
+  data: { labels: D.ingreso_clase.labels, datasets: [{ data: D.ingreso_clase.valores, backgroundColor: 'rgba(45,212,191,0.8)', borderRadius: 4 }]},
+  options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    scales: { x: { ticks: { callback: v => moneyM(v) }, grid: { color: 'rgba(148,163,184,0.08)' } } },
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' Ingreso: ' + money(c.parsed.x) } } } }
+});
+
+new Chart(document.getElementById('ch-marca'), {
+  type: 'doughnut',
+  data: { labels: D.marca.labels, datasets: [{ data: D.marca.reservas,
+    backgroundColor: ['#38BDF8', '#A78BFA', '#FBBF24'], borderColor: '#131E33', borderWidth: 3 }]},
+  options: { responsive: true, maintainAspectRatio: false, cutout: '58%',
+    plugins: { legend: { position: 'right', labels: { padding: 16, font: { size: 13.5 } } },
+      tooltip: { callbacks: { label: c => {
+        const i = c.dataIndex;
+        return ' Reservas: ' + nf.format(D.marca.reservas[i]) + ' (' + pct(D.marca.reservas_pct[i]) + ') · Ingreso: ' + pct(D.marca.ingreso_pct[i]);
+      } } } } }
+});
+</script>
+</body>
+</html>

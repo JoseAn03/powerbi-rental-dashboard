@@ -1,20 +1,21 @@
-# Power BI Rental Dashboard
+# Rental Operations Dashboard — Car Rental Analytics (Synthetic Data)
 
-Dashboard ejecutivo de **Power BI** que convierte **4.600+ reservas** en KPIs de
-**No-Show** y **revenue** para una operación de rent-a-car en el aeropuerto SJO
-(Alamo / Enterprise / National).
+Interactive dashboard analyzing a full year of car-rental operations at an international airport: **49,892 reservations** across 3 brands, 7 vehicle classes and 4 booking channels.
 
-## Qué entrega
+**Live demo:** open `index.html` in this repo (GitHub Pages) — a web version of the case, built with Chart.js from the same dataset. A native **Power BI** version (star schema + 30+ DAX measures) is in progress, following the build plan in this project.
 
-- **30+ medidas DAX** sobre un modelo **estrella (Star Schema)**.
-- Transformaciones con **Power Query** para limpiar y normalizar reservas.
-- KPIs de ocupación, ingreso por reserva y tasa de no-show.
+## Key findings
+- **Overall no-show rate: 10.8%** (excluding cancellations).
+- The **Web channel has the highest no-show rate (13.7%)**; walk-in (counter) is the lowest (6.1%).
+- **Prepaid reservations no-show far less: 7.1% vs 13.4%** for pay-at-counter.
+- Pickups concentrate between **9:00 and 13:00 (53.9%)**, following flight arrivals; peak hour 11:00.
+- **SUVs generate 39.8% of revenue**; December–April (high season) concentrates 65% of annual revenue.
 
-## Impacto
+## About the data
+100% **synthetic data** generated with Python (fixed seed, fully reproducible) — no real customer or company data. The dataset follows a star schema: one fact table (reservations) plus calendar, brand, agency, vehicle-class and channel dimensions, designed to mirror real rental-operation patterns (seasonality, channel behavior, lead time, prepaid effects).
 
-- Adoptado como la **herramienta estándar de reportes de gerencia**.
-- Reemplazó reportes manuales, dando **visibilidad ejecutiva** inmediata.
+## Stack
+Python (data generation) · Star schema modeling · Power BI / DAX (in progress) · Chart.js (web demo)
 
-> ⚠️ **Confidencialidad**: el archivo `.pbix` original no se publica porque
-> contiene datos del negocio. Este repositorio documenta el modelo de datos, los
-> patrones DAX y las métricas como caso de estudio.
+---
+*Portfolio project by José Andrés Sequeira Hernández — Data Analyst (Python · SQL · Power BI · automation & applied AI). Companion case: [El costo invisible del no-show](https://github.com/JoseAn03/mini-caso-noshow).*
